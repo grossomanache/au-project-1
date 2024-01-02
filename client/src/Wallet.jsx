@@ -14,13 +14,20 @@ function Wallet({ address, setAddress, balance, setBalance }) {
     }
   }
 
+  const PRIVATE_KEY =
+    "6b911fd37cdf5c81d4c0adb1ab7fa822ed253ab0ad9aa18d77257c88b29b718e";
+
   return (
     <div className="container wallet">
       <h1>Your Wallet</h1>
 
       <label>
-        Wallet Address
-        <input placeholder="Type an address, for example: 0x1" value={address} onChange={onChange}></input>
+        Wallet address
+        <input
+          placeholder="Type your address"
+          value={address}
+          onChange={onChange}
+        ></input>
       </label>
 
       <div className="balance">Balance: {balance}</div>
