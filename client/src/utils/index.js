@@ -30,3 +30,10 @@ export const getAddress = (publicKey) => {
   const usedHashedKey = hashedKey.slice(-20);
   return usedHashedKey;
 };
+
+export const bigIntReplacer = (key, value) => {
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+  return value;
+};

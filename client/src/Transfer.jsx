@@ -1,6 +1,6 @@
 import { useState } from "react";
 import server from "./server";
-import { signMessage } from "./utils";
+import { bigIntReplacer, signMessage } from "./utils";
 import { secp256k1 } from "ethereum-cryptography/secp256k1";
 import { toHex } from "ethereum-cryptography/utils";
 
@@ -18,15 +18,8 @@ function Transfer({ address, setBalance }) {
 
     const message = JSON.stringify({ sendAmount });
     const { signature, hashedMessage } = await signMessage(message, key);
-    const publicKey = await getPublicKey(key);
 
-    const signatureHex = JSON.stringify(signature, (key, value) => {
-      if (typeof value === "bigint") {
-        return value.toString();
-      } else {
-        return value;
-      }
-    });
+    const signatureHex = JSON.stringify(signature, bigIntReplacer);
 
     try {
       const {
@@ -37,7 +30,6 @@ function Transfer({ address, setBalance }) {
         recipient,
         message: hashedMessage,
         signature: signatureHex,
-        publicKey,
       });
       setBalance(balance);
     } catch (ex) {

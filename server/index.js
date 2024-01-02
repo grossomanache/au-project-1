@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const port = 3042;
 const secp = require("ethereum-cryptography/secp256k1");
+const { convertToSignature, convertToUint8Array } = require("./utils");
 
 const {
   secp256k1: { verify },
@@ -12,9 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 const balances = {
-  "0x1": 100,
-  "0x2": 50,
-  "0x3": 75,
+  "03298e8f1f151755dd3f1fa8c47c649c7ed254c25ca0412af3fe6d0d8a3bbfe8f5": 100,
+  "031295125b97ff26e7f51281de5fad6a1e4c6f6f644dd117d954da2ef4b989639b": 50,
+  "037a1885b9b978b12739948a8a2126a5b36797af57d9d78f9e90ca98aba2589dc6": 75,
 };
 
 app.get("/balance/:address", (req, res) => {
@@ -23,45 +24,31 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance });
 });
 
-function fromJSON(jsonString) {
-  let obj = JSON.parse(jsonString);
-
-  // Convert specific fields back to BigInt
-  if (obj.r !== undefined) {
-    obj.r = BigInt(obj.r);
-  }
-  if (obj.s !== undefined) {
-    obj.s = BigInt(obj.s);
-  }
-
-  // Add similar lines for other BigInt fields if necessary
-
-  return obj;
-}
-
 app.post("/send", (req, res) => {
-  const { sender, recipient, amount, signature, publicKey, message } = req.body;
+  const { sender, recipient, amount, signature, message } = req.body;
+
+  const formattedSignature = convertToSignature(signature);
+  const formattedMessage = convertToUint8Array(message);
 
   const isTransactionValid = verify(
-    fromJSON(signature),
-    new Uint8Array(Object.values(message)),
-    new Uint8Array(Object.values(publicKey))
+    formattedSignature,
+    formattedMessage,
+    sender
   );
 
   if (!isTransactionValid) {
-    res.status(400).send({ message: "Transaction is not valid" });
+    return res.status(400).send({ message: "Transaction is not valid" });
   }
 
   setInitialBalance(sender);
   setInitialBalance(recipient);
 
   if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
+    return res.status(400).send({ message: "Not enough funds!" });
   }
+  balances[sender] -= amount;
+  balances[recipient] += amount;
+  return res.send({ balance: balances[sender] });
 });
 
 app.listen(port, () => {
